@@ -1,15 +1,17 @@
 library(randomForest)
 set.seed(1117)
 
-data <- read.csv('./data/AllFeatures+Labelv3.csv', header = TRUE, sep = ',')
+data <- read.csv('./data/replaceChinese.csv', header = TRUE, sep = ',')
+
 
 # Remove unused columns
-AQI <- subset(data, select = -c(統計年, 統計月, 縣市別))
+AQI <- subset(data, select = -c(Year, Month, City))
 #AQI$AQI <- ifelse(AQI$AQI == 'green', 1, 0)
 n <- nrow(AQI)
 set.seed(1111)
 # Randomly shuffle the data
 newAQI <- AQI[sample(n),]
+
 
 # Split into training and testing data
 t_idx <- sample(seq_len(n), size = round(0.7 * n))
