@@ -57,8 +57,6 @@ f1 <- function(cm, n){
 # ----- Main ----- #
 main <- function(inData, selection, resultMode){
   inData <- droplevels(inData)
-  print(selection)
-  print(class(selection))
   # -- Initialize some variables -- #
   if(resultMode == 0){
     resultFolder <- './results/'
@@ -165,19 +163,23 @@ main <- function(inData, selection, resultMode){
   
   # ----- Average ----- #
   for(m in 1:length(levels(data$AQI))){
-    measure.dt.p[m,3] <- measure.dt.p[m,3] / n
-    measure.dt.r[m,3] <- measure.dt.r[m,3] / n
-    measure.dt.f1[m,3] <- measure.dt.f1[m,3] / n
-    measure.rf.p[m,3] <- measure.rf.p[m,3] / n
-    measure.rf.r[m,3] <- measure.rf.r[m,3] / n
-    measure.rf.f1[m,3] <- measure.rf.f1[m,3] / n
-    measure.knn.p[m,3] <- measure.knn.p[m,3] / n
-    measure.knn.r[m,3] <- measure.knn.r[m,3] / n
-    measure.knn.f1[m,3] <- measure.knn.f1[m,3] / n
+    measure.dt.p[m,3] <- round(measure.dt.p[m,3] / n, 3)
+    measure.dt.r[m,3] <- round(measure.dt.r[m,3] / n, 3)
+    measure.dt.f1[m,3] <- round(measure.dt.f1[m,3] / n, 3)
+    measure.rf.p[m,3] <- round(measure.rf.p[m,3] / n, 3)
+    measure.rf.r[m,3] <- round(measure.rf.r[m,3] / n, 3)
+    measure.rf.f1[m,3] <- round(measure.rf.f1[m,3] / n, 3)
+    measure.knn.p[m,3] <- round(measure.knn.p[m,3] / n, 3)
+    measure.knn.r[m,3] <- round(measure.knn.r[m,3] / n, 3)
+    measure.knn.f1[m,3] <- round(measure.knn.f1[m,3] / n, 3)
   }
-  avg.dt.accu <- dt.accu / n
-  avg.rf.accu <- rf.accu / n
-  avg.knn.accu <- knn.accu / n
+  avg.dt.accu <- round(dt.accu / n, 3)
+  avg.rf.accu <- round(rf.accu / n, 3)
+  avg.knn.accu <- round(knn.accu / n, 3)
+  csv.out <<- rbind(csv.out, c(selection, 
+                              measure.dt.p[m,3], measure.dt.r[m,3], measure.dt.f1[m,3], avg.dt.accu,
+                              measure.rf.p[m,3], measure.rf.r[m,3], measure.rf.f1[m,3], avg.rf.accu,
+                              measure.knn.p[m,3], measure.knn.r[m,3], measure.knn.f1[m,3], avg.knn.accu))
   
   
   # ----- Choose best k value ----- #
@@ -225,17 +227,37 @@ main <- function(inData, selection, resultMode){
 #rawData <- read.csv('./data/AllFeatures+Labelv4.csv', header = TRUE, sep = ',')
 rawData <- read.csv('./data/replaceChinese.csv', header = TRUE, sep = ',')
 
-
+# ----- Each kind of data set ----- #
+# -- Each Month -- #
+csv.out <- c()
 for(month in 1:12){
   selection <- paste(month, 'M', sep = '')
   monthData <- subset(rawData, Month==selection)
   main(inData = monthData, selection = selection, resultMode = 1)
 }
+out.month <- data.frame(Month=csv.out[,1], 
+                        DT.Precision=csv.out[,2], DT.Recall=csv.out[,3], DT.f1=csv.out[,4], DT.AVG=csv.out[,5],
+                        RF.Precision=csv.out[,6], RF.Recall=csv.out[,7], RF.f1=csv.out[,8], RF.AVG=csv.out[,9],
+                        KNN.Precision=csv.out[,10], KNN.Recall=csv.out[,11], KNN.f1=csv.out[,12], KNN.AVG=csv.out[,13])
+write.csv(out.month, file = './results/Month/_Month.csv', row.names = F)
 
+# -- Each City -- #
+csv.out <- c()
 for(city in levels(rawData$City)){
   cityData <- subset(rawData, City==city)
   main(inData = cityData, selection = city, resultMode = 2)
 }
+out.city <- data.frame(City=csv.out[,1], 
+                        DT.Precision=csv.out[,2], DT.Recall=csv.out[,3], DT.f1=csv.out[,4], DT.AVG=csv.out[,5],
+                        RF.Precision=csv.out[,6], RF.Recall=csv.out[,7], RF.f1=csv.out[,8], RF.AVG=csv.out[,9],
+                        KNN.Precision=csv.out[,10], KNN.Recall=csv.out[,11], KNN.f1=csv.out[,12], KNN.AVG=csv.out[,13])
+write.csv(out.city, file = './results/City/_City.csv', row.names = F)
 
+# -- Total -- #
+csv.out <- c()
 main(inData = rawData, selection = "ALL", resultMode = 0)
-
+out.city <- data.frame(ALL=csv.out[,1], 
+                       DT.Precision=csv.out[,2], DT.Recall=csv.out[,3], DT.f1=csv.out[,4], DT.AVG=csv.out[,5],
+                       RF.Precision=csv.out[,6], RF.Recall=csv.out[,7], RF.f1=csv.out[,8], RF.AVG=csv.out[,9],
+                       KNN.Precision=csv.out[,10], KNN.Recall=csv.out[,11], KNN.f1=csv.out[,12], KNN.AVG=csv.out[,13])
+write.csv(out.city, file = './results/_ALL.csv', row.names = F)
