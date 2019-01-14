@@ -10,7 +10,7 @@ library(ggplot2)
 options(warn=-1)
 
 # -- Clean the folder first -- #
-do.call(file.remove, list(list.files("./results/", full.names = TRUE)))
+do.call(file.remove, list(list.files("./results/All/", full.names = TRUE)))
 do.call(file.remove, list(list.files("./results/City/", full.names = TRUE)))
 do.call(file.remove, list(list.files("./results/Month/", full.names = TRUE)))
 
@@ -59,7 +59,7 @@ main <- function(inData, selection, resultMode){
   inData <- droplevels(inData)
   # -- Initialize some variables -- #
   if(resultMode == 0){
-    resultFolder <- './results/'
+    resultFolder <- './results/All/'
   } else if(resultMode == 1){
     resultFolder <- './results/Month/'
   } else if(resultMode == 2){
@@ -176,11 +176,16 @@ main <- function(inData, selection, resultMode){
   avg.dt.accu <- round(dt.accu / n, 3)
   avg.rf.accu <- round(rf.accu / n, 3)
   avg.knn.accu <- round(knn.accu / n, 3)
-  csv.out <<- rbind(csv.out, c(selection, 
-                              measure.dt.p[m,3], measure.dt.r[m,3], measure.dt.f1[m,3], avg.dt.accu,
-                              measure.rf.p[m,3], measure.rf.r[m,3], measure.rf.f1[m,3], avg.rf.accu,
-                              measure.knn.p[m,3], measure.knn.r[m,3], measure.knn.f1[m,3], avg.knn.accu))
-  
+  # csv.out <<- rbind(csv.out, c(selection, 
+  #                             measure.dt.p[m,3], measure.dt.r[m,3], measure.dt.f1[m,3], avg.dt.accu,
+  #                             measure.rf.p[m,3], measure.rf.r[m,3], measure.rf.f1[m,3], avg.rf.accu,
+  #                             measure.knn.p[m,3], measure.knn.r[m,3], measure.knn.f1[m,3], avg.knn.accu))
+  tmp.DT <- cbind(selection,type=type, Precision=measure.dt.p[,3], Recall=measure.dt.r[,3], F1=measure.dt.f1[,3])
+  csv.DT <<- rbind(csv.DT, tmp.DT)
+  tmp.RF <- cbind(selection,type=type, Precision=measure.rf.p[,3], Recall=measure.rf.r[,3], F1=measure.rf.f1[,3])
+  csv.RF <<- rbind(csv.RF, tmp.RF)
+  tmp.KNN <- cbind(selection,type=type, Precision=measure.knn.p[,3], Recall=measure.knn.r[,3], F1=measure.knn.f1[,3])
+  csv.KNN <<- rbind(csv.KNN, tmp.KNN)
   
   # ----- Choose best k value ----- #
   
@@ -229,35 +234,47 @@ rawData <- read.csv('./data/replaceChinese.csv', header = TRUE, sep = ',')
 
 # ----- Each kind of data set ----- #
 # -- Each Month -- #
-csv.out <- c()
+# csv.out <- c()
+csv.DT <- c()
+csv.RF <- c()
+csv.KNN <- c()
 for(month in 1:12){
   selection <- paste(month, 'M', sep = '')
   monthData <- subset(rawData, Month==selection)
   main(inData = monthData, selection = selection, resultMode = 1)
 }
-out.month <- data.frame(Month=csv.out[,1], 
-                        DT.Precision=csv.out[,2], DT.Recall=csv.out[,3], DT.f1=csv.out[,4], DT.AVG=csv.out[,5],
-                        RF.Precision=csv.out[,6], RF.Recall=csv.out[,7], RF.f1=csv.out[,8], RF.AVG=csv.out[,9],
-                        KNN.Precision=csv.out[,10], KNN.Recall=csv.out[,11], KNN.f1=csv.out[,12], KNN.AVG=csv.out[,13])
-write.csv(out.month, file = './results/Month/_Month.csv', row.names = F)
+out.month.DT <- data.frame(csv.DT)
+out.month.RF <- data.frame(csv.RF)
+out.month.KNN <- data.frame(csv.KNN)
+write.csv(out.month.DT, file = './results/Month/_Month_DecisionTree.csv', row.names = F)
+write.csv(out.month.RF, file = './results/Month/_Month_RandomForest.csv', row.names = F)
+write.csv(out.month.KNN, file = './results/Month/_Month_KNN.csv', row.names = F)
+
 
 # -- Each City -- #
-csv.out <- c()
+csv.DT <- c()
+csv.RF <- c()
+csv.KNN <- c()
 for(city in levels(rawData$City)){
   cityData <- subset(rawData, City==city)
   main(inData = cityData, selection = city, resultMode = 2)
 }
-out.city <- data.frame(City=csv.out[,1], 
-                        DT.Precision=csv.out[,2], DT.Recall=csv.out[,3], DT.f1=csv.out[,4], DT.AVG=csv.out[,5],
-                        RF.Precision=csv.out[,6], RF.Recall=csv.out[,7], RF.f1=csv.out[,8], RF.AVG=csv.out[,9],
-                        KNN.Precision=csv.out[,10], KNN.Recall=csv.out[,11], KNN.f1=csv.out[,12], KNN.AVG=csv.out[,13])
-write.csv(out.city, file = './results/City/_City.csv', row.names = F)
+out.city.DT <- data.frame(csv.DT)
+out.city.RF <- data.frame(csv.RF)
+out.city.KNN <- data.frame(csv.KNN)
+write.csv(out.city.DT, file = './results/City/_City_DecisionTree.csv', row.names = F)
+write.csv(out.city.RF, file = './results/City/_City_RandomForest.csv', row.names = F)
+write.csv(out.city.KNN, file = './results/City/_City_KNN.csv', row.names = F)
+
 
 # -- Total -- #
-csv.out <- c()
+csv.DT <- c()
+csv.RF <- c()
+csv.KNN <- c()
 main(inData = rawData, selection = "ALL", resultMode = 0)
-out.city <- data.frame(ALL=csv.out[,1], 
-                       DT.Precision=csv.out[,2], DT.Recall=csv.out[,3], DT.f1=csv.out[,4], DT.AVG=csv.out[,5],
-                       RF.Precision=csv.out[,6], RF.Recall=csv.out[,7], RF.f1=csv.out[,8], RF.AVG=csv.out[,9],
-                       KNN.Precision=csv.out[,10], KNN.Recall=csv.out[,11], KNN.f1=csv.out[,12], KNN.AVG=csv.out[,13])
-write.csv(out.city, file = './results/_ALL.csv', row.names = F)
+out.all.DT <- data.frame(csv.DT)
+out.all.RF <- data.frame(csv.RF)
+out.all.KNN <- data.frame(csv.KNN)
+write.csv(out.all.DT, file = './results/All/_All_DecisionTree.csv', row.names = F)
+write.csv(out.all.RF, file = './results/All/_All_RandomForest.csv', row.names = F)
+write.csv(out.all.KNN, file = './results/All/_All_KNN.csv', row.names = F)
