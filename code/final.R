@@ -1,11 +1,11 @@
-require(ROCR)
-require(rpart)
-require(rpart.plot)
-require(rattle)
-require(randomForest)
-require(class)
-require(dplyr)
-require(ggplot2)
+library(ROCR)
+library(rpart)
+library(rpart.plot)
+library(rattle)
+library(randomForest)
+library(class)
+library(dplyr)
+library(ggplot2)
 
 options(warn=-1)
 
@@ -72,11 +72,11 @@ main <- function(inData, selection, resultMode){
   
   # -- Remove unused columns -- #
   # k = 49
-  # data <- subset(rawData, 汽車臺數!=0, select = -c(統計年, 統計月, 縣市別, 罰營建工程次數, 罰其他固定污染源次數,
-  # 檢營建工程次數, 罰移動污染源次數, 人均日廢棄物KG, 檢其他固定污染源次數))
+  # data <- subset(rawData, Car!=0, select = -c(Year, Month, City, PenaltyConstruction, PenaltyPollution,
+  # ExamConstruction, PenaltyMobilePollution, WastePerPersonKG, ExamPollution))
   # k = 6
   inData[,5:ncol(inData)] <- scale(inData[,5:ncol(inData)], center = TRUE, scale = TRUE)
-  data <- subset(inData, 汽車臺數!=0, select = c(AQI, 汽車臺數, 機車臺數))
+  data <- subset(inData, Car!=0, select = c(AQI, Car, Bike))
   
   # -- Randomly shuffle the data -- #
   data.row <- nrow(data)
@@ -132,7 +132,7 @@ main <- function(inData, selection, resultMode){
     # -- Decision Tree -- #
     dt.Model <- rpart(formula = AQI ~ ., data = trainData, method = "class", control = rpart.control(cp = 0.001))
     dt.Result <- predict(dt.Model, newdata = testData, type = "class")
-    dt.CM <- table(test.Label, dt.Result, dnn = c("實際", "預測"))
+    dt.CM <- table(test.Label, dt.Result, dnn = c("Actual", "Predict"))
     dt.accu <- dt.accu + sum(diag(dt.CM)) / sum(dt.CM)
     for(m in 1:length(levels(data$AQI))){
       measure.dt.p[m,3] <- measure.dt.p[m,3] + precision(dt.CM, m)
@@ -143,7 +143,7 @@ main <- function(inData, selection, resultMode){
     # -- Random Forest -- #
     rf.Model <- randomForest(AQI ~ ., data = trainData, importane = T, proximity = T, do.trace = 100)
     rf.Result <- predict(rf.Model, newdata = testData, type = "class")
-    rf.CM <- table(test.Label, rf.Result, dnn = c("實際", "預測"))
+    rf.CM <- table(test.Label, rf.Result, dnn = c("Actual", "Predict"))
     rf.accu <- rf.accu + sum(diag(rf.CM)) / sum(rf.CM)
     for(m in 1:length(levels(data$AQI))){
       measure.rf.p[m,3] <- measure.rf.p[m,3] + precision(rf.CM, m)
@@ -155,7 +155,7 @@ main <- function(inData, selection, resultMode){
     knnTrain <- subset(trainData, select = -c(AQI))
     knnTest <- subset(testData, select = -c(AQI))
     knn.Result <- knn(train = knnTrain, test = knnTest, cl = train.Label, k = 6)
-    knn.CM <- table(test.Label, knn.Result, dnn = c("實際", "預測"))
+    knn.CM <- table(test.Label, knn.Result, dnn = c("Actual", "Predict"))
     knn.accu <- knn.accu + sum(diag(knn.CM)) / sum(knn.CM)
     for(m in 1:length(levels(data$AQI))){
       measure.knn.p[m,3] <- measure.knn.p[m,3] + precision(knn.CM, m)
@@ -224,18 +224,20 @@ main <- function(inData, selection, resultMode){
 
 
 # ----- Read the data and scale the data ----- #
-rawData <- read.csv('./data/AllFeatures+Labelv4.csv', header = TRUE, sep = ',')
+#rawData <- read.csv('./data/AllFeatures+Labelv4.csv', header = TRUE, sep = ',')
+rawData <- read.csv('./data/replaceChinese.csv', header = TRUE, sep = ',')
 
 
 for(month in 1:12){
-  selection <- paste(month, '月', sep = '')
-  monthData <- subset(rawData, 統計月==selection)
+  selection <- paste(month, 'M', sep = '')
+  monthData <- subset(rawData, Month==selection)
   main(monthData, selection, 1)
 }
 
-for(city in levels(rawData$縣市別)){
-  cityData <- subset(rawData, 縣市別==city)
+for(city in levels(rawData$City)){
+  cityData <- subset(rawData, City==city)
   main(cityData, city, 2)
 }
 
 main(rawData)
+

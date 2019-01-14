@@ -1,17 +1,16 @@
 # < Title of your final project >
 
 ### Groups
-* < name, student ID1 >
+* < 李右元, 107753027 >
 * < name, student ID2 >
-* < name, student ID3 >
 
 ### Goal
 A breif introduction about your project, i.e., what is your goal?
 
 ### demo 
 You should provide an example commend to reproduce your result
-```R
-Rscript code/your_script.R --input data/training --output results/performance.tsv
+```
+Rscript code/final.R
 ```
 * any on-line visualization
 
