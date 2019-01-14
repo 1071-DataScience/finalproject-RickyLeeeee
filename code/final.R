@@ -31,7 +31,7 @@ data.Labels <- shuffleData$AQI
 # ----- Initialize the variable ----- #
 type <- c('green', 'orange', 'red', 'yellow')
 measurement <- c('p', 'r', 'f1')
-model <- c('dT', 'rF', 'knn')
+model <- c('dt', 'rf', 'knn')
 for(i in model){
   for(j in measurement){
     tmp <- c()
@@ -50,11 +50,11 @@ for(i in model){
 
 
 knn.accu <- 0
-dT.accu <- 0
-rF.accu <- 0
+dt.accu <- 0
+rf.accu <- 0
 avg.knn.accu <- 0
-avg.dT.accu <- 0
-avg.rF.accu <- 0
+avg.dt.accu <- 0
+avg.rf.accu <- 0
 
 
 # ----- Precision, Recall, f1 ----- #
@@ -91,25 +91,25 @@ for(i in c(1:n)){
   train.Label <- data.Labels[-testIndexes]
   
   # -- Decision Tree -- #
-  dT.Model <- rpart(formula = AQI ~ ., data = trainData, method = "class", control = rpart.control(cp = 0.001))
-  dT.Result <- predict(dT.Model, newdata = testData, type = "class")
-  dT.CM <- table(test.Label, dT.Result, dnn = c("實際", "預測"))
-  dT.accu <- dT.accu + sum(diag(dT.CM)) / sum(dT.CM)
+  dt.Model <- rpart(formula = AQI ~ ., data = trainData, method = "class", control = rpart.control(cp = 0.001))
+  dt.Result <- predict(dt.Model, newdata = testData, type = "class")
+  dt.CM <- table(test.Label, dt.Result, dnn = c("實際", "預測"))
+  dt.accu <- dt.accu + sum(diag(dt.CM)) / sum(dt.CM)
   for(m in 1:4){
-    measure.dT.p[m,3] <- measure.dT.p[m,3] + precision(dT.CM, m)
-    measure.dT.r[m,3] <- measure.dT.r[m,3] + recall(dT.CM, m)
-    measure.dT.f1[m,3] <- measure.dT.f1[m,3] + f1(dT.CM, m)
+    measure.dt.p[m,3] <- measure.dt.p[m,3] + precision(dt.CM, m)
+    measure.dt.r[m,3] <- measure.dt.r[m,3] + recall(dt.CM, m)
+    measure.dt.f1[m,3] <- measure.dt.f1[m,3] + f1(dt.CM, m)
   }
   
   # -- Random Forest -- #
-  rF.Model <- randomForest(AQI ~ ., data = trainData, importane = T, proximity = T, do.trace = 100)
-  rF.Result <- predict(rF.Model, newdata = testData, type = "class")
-  rF.CM <- table(test.Label, rF.Result, dnn = c("實際", "預測"))
-  rF.accu <- rF.accu + sum(diag(rF.CM)) / sum(rF.CM)
+  rf.Model <- randomForest(AQI ~ ., data = trainData, importane = T, proximity = T, do.trace = 100)
+  rf.Result <- predict(rf.Model, newdata = testData, type = "class")
+  rf.CM <- table(test.Label, rf.Result, dnn = c("實際", "預測"))
+  rf.accu <- rf.accu + sum(diag(rf.CM)) / sum(rf.CM)
   for(m in 1:4){
-    measure.rF.p[m,3] <- measure.rF.p[m,3] + precision(rF.CM, m)
-    measure.rF.r[m,3] <- measure.rF.r[m,3] + recall(rF.CM, m)
-    measure.rF.f1[m,3] <- measure.rF.f1[m,3] + f1(rF.CM, m)
+    measure.rf.p[m,3] <- measure.rf.p[m,3] + precision(rf.CM, m)
+    measure.rf.r[m,3] <- measure.rf.r[m,3] + recall(rf.CM, m)
+    measure.rf.f1[m,3] <- measure.rf.f1[m,3] + f1(rf.CM, m)
   }
 
   # -- KNN -- #
@@ -128,62 +128,34 @@ for(i in c(1:n)){
 
 # ----- Average ----- #
 for(m in 1:4){
-  measure.dT.p[m,3] <- measure.dT.p[m,3] / n
-  measure.dT.r[m,3] <- measure.dT.r[m,3] / n
-  measure.dT.f1[m,3] <- measure.dT.f1[m,3] / n
-  measure.rF.p[m,3] <- measure.rF.p[m,3] / n
-  measure.rF.r[m,3] <- measure.rF.r[m,3] / n
-  measure.rF.f1[m,3] <- measure.rF.f1[m,3] / n
+  measure.dt.p[m,3] <- measure.dt.p[m,3] / n
+  measure.dt.r[m,3] <- measure.dt.r[m,3] / n
+  measure.dt.f1[m,3] <- measure.dt.f1[m,3] / n
+  measure.rf.p[m,3] <- measure.rf.p[m,3] / n
+  measure.rf.r[m,3] <- measure.rf.r[m,3] / n
+  measure.rf.f1[m,3] <- measure.rf.f1[m,3] / n
   measure.knn.p[m,3] <- measure.knn.p[m,3] / n
   measure.knn.r[m,3] <- measure.knn.r[m,3] / n
   measure.knn.f1[m,3] <- measure.knn.f1[m,3] / n
 }
-avg.dT.accu <- dT.accu / n
-avg.rF.accu <- rF.accu / n
+avg.dt.accu <- dt.accu / n
+avg.rf.accu <- rf.accu / n
 avg.knn.accu <- knn.accu / n
 
 
 # ----- Choose best k value ----- #
 
-
-klist <- seq(1:sqrt(data.row))
-knnFunction <- function(x, knnTrain, knnTest, trainLabels, testLabels) {
-  prediction <- knn(train = knnTrain, test = knnTest, cl = trainLabels, k = x)
-  cm <- table(x = testLabels, y = prediction)
-  accuracy <- sum(diag(cm)) / sum(cm)
-}
-accuracies <- sapply(klist, knnFunction, knnTrain = knnTrain, knnTest = knnTest, trainLabels = train.Label, testLabels = test.Label)
-# -- k value visualization -- #
-df <- data.frame(kv = klist, accuracy = accuracies)
-ggplot(df, aes(x = kv, y = accuracy, label = kv, color = accuracy)) +
-  geom_point(size = 5) + geom_text(vjust = 2)
-
-
-
-
-
-
-# test <- function(cm){
-#   p.green <- diag(cm)[1] / sum(cm[,1])
-#   p.orange <- diag(cm)[2] / sum(cm[,2])
-#   p.red <- diag(cm)[3] / sum(cm[,3])
-#   p.yellow <- diag(cm)[4] / sum(cm[,4])
-#   
-#   r.green <- diag(cm)[1] / sum(cm[1,])
-#   r.orange <- diag(cm)[2] / sum(cm[2,])
-#   r.red <- diag(cm)[3] / sum(cm[3,])
-#   r.yellow <- diag(cm)[4] / sum(cm[4,])
-#   
-#   f1.green <- 2 / ((1/p.green) + (1/r.green))
-#   f1.orange <- 2 / ((1/p.orange) + (1/r.orange))
-#   f1.red <- 2 / ((1/p.red) + (1/r.red))
-#   f1.yellow <- 2 / ((1/p.yellow) + (1/r.yellow))
-#   
-#   pr <- data.frame('precision' = c(p.green, p.yellow, p.orange, p.red),
-#                    'recall' = c(r.green, r.yellow, r.orange, r.red),
-#                    'f1' = c(f1.green, f1.yellow, f1.orange, f1.red))
-#   return(pr)
+# klist <- seq(1:sqrt(data.row))
+# knnFunction <- function(x, knnTrain, knnTest, trainLabels, testLabels) {
+#   prediction <- knn(train = knnTrain, test = knnTest, cl = trainLabels, k = x)
+#   cm <- table(x = testLabels, y = prediction)
+#   accuracy <- sum(diag(cm)) / sum(cm)
 # }
+# accuracies <- sapply(klist, knnFunction, knnTrain = knnTrain, knnTest = knnTest, trainLabels = train.Label, testLabels = test.Label)
+# # -- k value visualization -- #
+# df <- data.frame(kv = klist, accuracy = accuracies)
+# ggplot(df, aes(x = kv, y = accuracy, label = kv, color = accuracy)) +
+#   geom_point(size = 5) + geom_text(vjust = 2)
 
 
 # Plotting the decision tree
@@ -196,9 +168,41 @@ ggplot(df, aes(x = kv, y = accuracy, label = kv, color = accuracy)) +
 #dev.off()
 
 
-p <- ggplot(data=measure.dT.f1, aes(x=type, y=value)) +
-  geom_bar(stat="identity", width = 0.5, fill = 'orange', color = 'black')+
-  geom_text(aes(label=value), vjust=-1, size=3.5)+
-  theme_minimal()
-p
+# ----- Visualization ----- #
+dt.combine <- rbind(measure.dt.f1,measure.dt.p,measure.dt.r)
+rf.combine <- rbind(measure.rf.f1,measure.rf.p,measure.rf.r)
+knn.combine <- rbind(measure.knn.f1,measure.knn.p,measure.dt.r)
+
+plot <- function(a){
+  if(as.character(substitute(a)) == 'knn.combine'){
+    title <- 'KNN'
+  } else if(as.character(substitute(a)) == 'rf.combine'){
+    title <- 'Random Forest'
+  } else {
+    title <- 'Decision Tree'
+  }
+  p <- ggplot(data=a, aes(reorder(x=type, -value), y=value, fill=model)) +
+    ggtitle(title) +
+    xlab("Type")+
+    theme(plot.title = element_text(hjust = 0.5))+
+    geom_bar(stat="identity", width = 0.5, position=position_dodge())+
+    geom_text(aes(label=round(value,2)), vjust=+0.3, 
+              position = position_dodge(0.5), size=5)+
+    scale_fill_brewer(palette="Set1")+
+    coord_flip()
+  p
+}
+plot(dt.combine)
+#--
+AQIbar <- as.data.frame(table(rawData$AQI))
+
+p2 <- ggplot(data=AQIbar, aes(reorder(x=Var1, -Freq), y=Freq)) +
+  ggtitle("AQI") +
+  xlab("Var1")+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_bar(stat="identity", width = 0.5, fill = "Orange")+
+  geom_text(aes(label=Freq), vjust=-0.3)+
+  scale_fill_brewer(palette="Dark2")
+
+p2
 
