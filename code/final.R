@@ -15,7 +15,7 @@ do.call(file.remove, list(list.files("./results/City/", full.names = TRUE)))
 do.call(file.remove, list(list.files("./results/Month/", full.names = TRUE)))
 
 # ----- Draw the plots and save as file ----- #
-plot <- function(a, resultFolder){
+plot <- function(a, resultFolder, selection){
   if(as.character(substitute(a)) == 'knn.combine'){
     title <- 'KNN'
   } else if(as.character(substitute(a)) == 'rf.combine'){
@@ -57,12 +57,10 @@ f1 <- function(cm, n){
 # ----- Main ----- #
 main <- function(inData, selection, resultMode){
   inData <- droplevels(inData)
-  
+  print(selection)
+  print(class(selection))
   # -- Initialize some variables -- #
-  if(missing(selection)){
-    selection <- NULL
-  }
-  if(missing(resultMode)){
+  if(resultMode == 0){
     resultFolder <- './results/'
   } else if(resultMode == 1){
     resultFolder <- './results/Month/'
@@ -135,9 +133,9 @@ main <- function(inData, selection, resultMode){
     dt.CM <- table(test.Label, dt.Result, dnn = c("Actual", "Predict"))
     dt.accu <- dt.accu + sum(diag(dt.CM)) / sum(dt.CM)
     for(m in 1:length(levels(data$AQI))){
-      measure.dt.p[m,3] <- measure.dt.p[m,3] + precision(dt.CM, m)
-      measure.dt.r[m,3] <- measure.dt.r[m,3] + recall(dt.CM, m)
-      measure.dt.f1[m,3] <- measure.dt.f1[m,3] + f1(dt.CM, m)
+      measure.dt.p[m,3] <- measure.dt.p[m,3] + precision(cm = dt.CM, n = m)
+      measure.dt.r[m,3] <- measure.dt.r[m,3] + recall(cm = dt.CM, n = m)
+      measure.dt.f1[m,3] <- measure.dt.f1[m,3] + f1(cm = dt.CM, n = m)
     }
     
     # -- Random Forest -- #
@@ -146,9 +144,9 @@ main <- function(inData, selection, resultMode){
     rf.CM <- table(test.Label, rf.Result, dnn = c("Actual", "Predict"))
     rf.accu <- rf.accu + sum(diag(rf.CM)) / sum(rf.CM)
     for(m in 1:length(levels(data$AQI))){
-      measure.rf.p[m,3] <- measure.rf.p[m,3] + precision(rf.CM, m)
-      measure.rf.r[m,3] <- measure.rf.r[m,3] + recall(rf.CM, m)
-      measure.rf.f1[m,3] <- measure.rf.f1[m,3] + f1(rf.CM, m)
+      measure.rf.p[m,3] <- measure.rf.p[m,3] + precision(cm = rf.CM, n = m)
+      measure.rf.r[m,3] <- measure.rf.r[m,3] + recall(cm = rf.CM, n = m)
+      measure.rf.f1[m,3] <- measure.rf.f1[m,3] + f1(cm = rf.CM, n = m)
     }
   
     # -- KNN -- #
@@ -158,9 +156,9 @@ main <- function(inData, selection, resultMode){
     knn.CM <- table(test.Label, knn.Result, dnn = c("Actual", "Predict"))
     knn.accu <- knn.accu + sum(diag(knn.CM)) / sum(knn.CM)
     for(m in 1:length(levels(data$AQI))){
-      measure.knn.p[m,3] <- measure.knn.p[m,3] + precision(knn.CM, m)
-      measure.knn.r[m,3] <- measure.knn.r[m,3] + recall(knn.CM, m)
-      measure.knn.f1[m,3] <- measure.knn.f1[m,3] + f1(knn.CM, m)
+      measure.knn.p[m,3] <- measure.knn.p[m,3] + precision(cm = knn.CM, n = m)
+      measure.knn.r[m,3] <- measure.knn.r[m,3] + recall(cm = knn.CM, n = m)
+      measure.knn.f1[m,3] <- measure.knn.f1[m,3] + f1(cm = knn.CM, n = m)
     }
   }
   
@@ -203,9 +201,9 @@ main <- function(inData, selection, resultMode){
   rf.combine <- rbind(measure.rf.f1,measure.rf.p,measure.rf.r)
   knn.combine <- rbind(measure.knn.f1,measure.knn.p,measure.dt.r)
   
-  plot(dt.combine, resultFolder)
-  plot(rf.combine, resultFolder)
-  plot(knn.combine, resultFolder)
+  plot(a = dt.combine, resultFolder = resultFolder, selection = selection)
+  plot(a = rf.combine, resultFolder = resultFolder, selection = selection)
+  plot(a = knn.combine, resultFolder = resultFolder, selection = selection)
   
   # -- AQI -- #
   AQIbar <- as.data.frame(table(data$AQI))
@@ -231,13 +229,13 @@ rawData <- read.csv('./data/replaceChinese.csv', header = TRUE, sep = ',')
 for(month in 1:12){
   selection <- paste(month, 'M', sep = '')
   monthData <- subset(rawData, Month==selection)
-  main(monthData, selection, 1)
+  main(inData = monthData, selection = selection, resultMode = 1)
 }
 
 for(city in levels(rawData$City)){
   cityData <- subset(rawData, City==city)
-  main(cityData, city, 2)
+  main(inData = cityData, selection = city, resultMode = 2)
 }
 
-main(rawData)
+main(inData = rawData, selection = "ALL", resultMode = 0)
 
